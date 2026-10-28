@@ -2,8 +2,8 @@ import Link from "next/link";
 import { ArrowLeft, CheckCircle2, FileText, MapPin, ShieldAlert } from "lucide-react";
 import { Shell, PageHeading } from "../../../_components/shell";
 
-export default async function VerifyPage({ params }: { params: Promise<{ userId: string }> }) {
-  const { userId } = await params;
+export default function VerifyPage({ params }: { params: { userId: string } }) {
+  const { userId } = params;
   return <Shell role="agent"><PageHeading eyebrow="Detail kunjungan" title="Tinjau pengajuan" description="Informasi contoh untuk membantu merancang alur verifikasi lapangan."/>
     <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"><div className="flex flex-col gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">ID pengajuan</p><h2 className="mt-1 text-xl font-bold text-slate-900">{userId}</h2><p className="mt-1 text-sm text-slate-500">Pendaftar contoh · bukan data warga nyata</p></div><span className="w-fit rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800">Menunggu peninjauan</span></div>
       <div className="mt-5 grid gap-4 sm:grid-cols-2"><div className="rounded-xl bg-slate-50 p-4"><p className="text-sm text-slate-500">Program dipilih</p><p className="mt-1 font-semibold text-slate-900">BPNT · PKH (contoh)</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-sm text-slate-500">Hasil mesin aturan</p><p className="mt-1 font-semibold text-slate-900">Belum dievaluasi</p></div></div>
