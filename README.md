@@ -2,7 +2,7 @@
 
 Perlab is a mobile-first prototype for exploring a social assistance application workflow: citizen assessment, dispute submission, and field-agent review.
 
-> **Prototype notice:** This repository is not an official government service. Current screens use sample content only. There is no real identity verification, facial liveness detection, eligibility decision, payout, or persistent database integration yet. Do not enter real NIKs, face images, or bank details.
+> **Prototype notice:** This repository is not an official government service. Current screens use sample content only. There is no real identity verification, facial liveness detection, eligibility decision, payout, or persistent application-data integration yet. Do not enter real NIKs, face images, or bank details.
 
 ## Stage 1 scope
 
