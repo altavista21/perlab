@@ -1,9 +1,10 @@
+import { AuthGuard } from "../../_components/auth-guard";
 import Link from "next/link";
 import { ArrowLeft, ClipboardCheck, Info } from "lucide-react";
 import { Shell, PageHeading } from "../../_components/shell";
 
 export default function AssessmentPage() {
-  return <Shell><PageHeading eyebrow="Evaluasi kriteria" title="Data kondisi keluarga" description="Formulir rancangan untuk mengumpulkan kriteria dasar sebelum simulasi kelayakan."/>
+  return <AuthGuard role="citizen"><Shell><PageHeading eyebrow="Evaluasi kriteria" title="Data kondisi keluarga" description="Formulir rancangan untuk mengumpulkan kriteria dasar sebelum simulasi kelayakan."/>
     <form action="/user/dashboard" className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"><div className="mb-6 flex items-start gap-3 rounded-xl bg-blue-50 p-4 text-sm leading-6 text-blue-900"><Info size={19} className="mt-0.5 shrink-0"/><p>Profil yang tampil pada PRD adalah data dummy. Gunakan hanya data contoh sampai penyimpanan dan perlindungan data siap.</p></div>
       <h2 className="font-bold text-slate-900">Profil contoh</h2><div className="mt-3 grid gap-4 sm:grid-cols-2"><label className="text-sm font-medium text-slate-700">Nama<input readOnly value="Budi Santoso (data dummy)" className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-slate-500"/></label><label className="text-sm font-medium text-slate-700">Alamat<input readOnly value="Alamat contoh, Jakarta Selatan" className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-slate-500"/></label></div>
       <h2 className="mt-7 font-bold text-slate-900">Kriteria ekonomi</h2><div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="text-sm font-medium text-slate-700">Daya listrik rumah<select name="dayaListrik" defaultValue="" required className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3"><option value="" disabled>Pilih daya listrik</option><option>450 VA</option><option>900 VA</option><option>1300 VA</option><option>2200 VA</option><option>&gt; 2200 VA</option></select></label><label className="text-sm font-medium text-slate-700">Jumlah motor<input name="motor" type="number" min="0" max="99" defaultValue="0" required className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-3"/></label><label className="text-sm font-medium text-slate-700">Jumlah mobil<input name="mobil" type="number" min="0" max="99" defaultValue="0" required className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-3"/></label></div>
@@ -12,5 +13,5 @@ export default function AssessmentPage() {
       <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-between"><Link href="/user/dashboard" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 text-sm font-semibold text-slate-700"><ArrowLeft size={16}/> Kembali</Link><button type="submit" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-perlab-700 px-5 font-semibold text-white hover:bg-perlab-800"><ClipboardCheck size={18}/> Simpan tampilan demo</button></div>
       <p className="mt-4 text-xs text-slate-500">Form ini belum menjalankan decision engine atau menyimpan data. Evaluasi otomatis akan dibuat pada tahap berikutnya.</p>
     </form>
-  </Shell>;
+  </Shell></AuthGuard>;
 }
