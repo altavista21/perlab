@@ -1,12 +1,13 @@
+import { AuthGuard } from "../../_components/auth-guard";
 import Link from "next/link";
 import { ArrowUpRight, ClipboardCheck, MapPin, Search, Users } from "lucide-react";
 import { Shell, PageHeading } from "../../_components/shell";
 
 export default function AgentDashboardPage() {
-  return <Shell role="agent"><PageHeading eyebrow="Area petugas" title="Antrean verifikasi" description="Rancangan daftar pengajuan yang membutuhkan peninjauan petugas lapangan."/>
+  return <AuthGuard role="agent"><Shell role="agent"><PageHeading eyebrow="Area petugas" title="Antrean verifikasi" description="Rancangan daftar pengajuan yang membutuhkan peninjauan petugas lapangan."/>
     <div className="grid gap-4 sm:grid-cols-3"><div className="rounded-2xl border border-slate-200 bg-white p-5"><Users className="text-perlab-700" size={21}/><p className="mt-3 text-sm text-slate-500">Total antrean demo</p><p className="mt-1 text-2xl font-bold text-slate-900">02</p></div><div className="rounded-2xl border border-slate-200 bg-white p-5"><ClipboardCheck className="text-amber-600" size={21}/><p className="mt-3 text-sm text-slate-500">Menunggu peninjauan</p><p className="mt-1 text-2xl font-bold text-slate-900">02</p></div><div className="rounded-2xl border border-slate-200 bg-white p-5"><MapPin className="text-slate-500" size={21}/><p className="mt-3 text-sm text-slate-500">Wilayah tugas</p><p className="mt-1 text-lg font-bold text-slate-900">Contoh wilayah</p></div></div>
     <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white"><div className="flex flex-col gap-3 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-bold text-slate-900">Daftar pengajuan</h2><p className="mt-1 text-sm text-slate-500">Data di bawah ini hanya contoh tampilan.</p></div><div className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-400"><Search size={16}/>Pencarian belum aktif</div></div>
       <div className="divide-y divide-slate-100">{[{id:"DEMO-001",name:"Pendaftar contoh A",program:"BPNT · PKH",status:"Menunggu verifikasi"},{id:"DEMO-002",name:"Pendaftar contoh B",program:"KIP",status:"Sanggahan diajukan"}].map(u=><div key={u.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-semibold text-slate-900">{u.name}</h3><span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">{u.status}</span></div><p className="mt-1 text-xs text-slate-500">{u.id} · {u.program}</p></div><Link href={"/agent/verify/"+u.id} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Lihat detail <ArrowUpRight size={16}/></Link></div>)}</div>
     </section><p className="mt-4 text-xs leading-5 text-slate-500">Tombol dan data antrean belum mengubah status apa pun. Persetujuan petugas memerlukan autentikasi dan otorisasi server pada tahap backend.</p>
-  </Shell>;
+  </Shell></AuthGuard>;
 }
