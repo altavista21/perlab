@@ -1,3 +1,4 @@
+import { LogoutButton } from "./logout-button";
 import Link from "next/link";
 import { ShieldCheck, LayoutDashboard, ClipboardCheck, Users, FileText, CircleHelp } from "lucide-react";
 
@@ -23,7 +24,7 @@ export function Shell({ children, role = "user" }: { children: React.ReactNode; 
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         <Brand />
-        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">{role === "user" ? "Portal Masyarakat" : "Portal Petugas"}</span>
+        <div className="flex items-center gap-2"><span className="hidden rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 sm:inline-flex">{role === "user" ? "Portal Masyarakat" : "Portal Petugas"}</span><LogoutButton /></div>
       </div>
     </header>
     <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:py-8">
