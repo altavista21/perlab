@@ -15,22 +15,25 @@ export function AuthGuard({ role, children }: { role: Role; children: React.Reac
   const [problem, setProblem] = useState("");
 
   useEffect(() => {
-    if (!auth || !db) {
+    const firebaseAuth = auth;
+    const firestore = db;
+
+    if (!firebaseAuth || !firestore) {
       setProblem("Konfigurasi Firebase belum lengkap. Lengkapi variabel NEXT_PUBLIC_FIREBASE_* terlebih dahulu.");
       setReady(true);
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
       if (!user) {
         router.replace(role === "agent" ? "/agent/login" : "/user/login");
         return;
       }
 
       try {
-        const profile = await getDoc(doc(db, "users", user.uid));
+        const profile = await getDoc(doc(firestore, "users", user.uid));
         if (!profile.exists() || profile.data().role !== role) {
-          await signOut(auth);
+          await signOut(firebaseAuth);
           setProblem("Akun ini belum memiliki peran yang sesuai. Admin harus menyiapkan dokumen users/{UID} di Firestore terlebih dahulu.");
           setReady(true);
           return;
