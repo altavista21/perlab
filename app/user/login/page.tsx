@@ -60,6 +60,7 @@ export default function UserLoginPage() {
         {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm leading-5 text-rose-800">{error}</p>}
         <button disabled={busy} className="min-h-12 w-full rounded-xl bg-perlab-700 px-4 font-semibold text-white hover:bg-perlab-800 disabled:cursor-wait disabled:opacity-60" type="submit">{busy ? "Memeriksa akun…" : "Masuk"}</button>
       </form>
-      <p className="mt-4 text-xs leading-5 text-slate-500">Akun warga harus dibuat di Firebase Authentication dan memiliki dokumen users/{'{UID}'} dengan role citizen. Halaman ini belum memverifikasi identitas NIK atau kelayakan bansos.</p>
+      <p className="mt-5 text-center text-sm text-slate-600">Belum punya akun?{" "}<Link href="/user/register" className="font-semibold text-perlab-700 hover:underline">Daftar sekarang</Link></p>
+      <p className="mt-4 text-xs leading-5 text-slate-500">Halaman ini belum memverifikasi identitas NIK atau kelayakan bansos.</p>
     </section></div></main>;
 }
