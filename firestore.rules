@@ -26,19 +26,18 @@ service cloud.firestore {
     }
 
     match /applications/{applicationId} {
-      // Citizens may read only their own application. Agents may review the queue.
+      // Citizens can query only their own applications; agents can review the queue.
       allow get: if signedIn() && (resource.data.ownerUid == request.auth.uid || isAgent());
-      allow list: if isAgent();
+      allow list: if signedIn() && (resource.data.ownerUid == request.auth.uid || isAgent());
 
-      // A citizen may create an application only for their own authenticated UID.
       allow create: if signedIn()
         && request.resource.data.keys().hasOnly([
-          'ownerUid', 'applicantName', 'programs', 'dayaListrik',
+          'ownerUid', 'applicantName', 'applicantEmail', 'programs', 'dayaListrik',
           'motorCount', 'carCount', 'hasSchoolMember', 'hasElderlyMember',
           'status', 'createdAt'
         ])
         && request.resource.data.keys().hasAll([
-          'ownerUid', 'applicantName', 'programs', 'dayaListrik',
+          'ownerUid', 'applicantName', 'applicantEmail', 'programs', 'dayaListrik',
           'motorCount', 'carCount', 'hasSchoolMember', 'hasElderlyMember',
           'status', 'createdAt'
         ])
@@ -46,6 +45,7 @@ service cloud.firestore {
         && request.resource.data.applicantName is string
         && request.resource.data.applicantName.size() >= 1
         && request.resource.data.applicantName.size() <= 80
+        && request.resource.data.applicantEmail == request.auth.token.email
         && request.resource.data.programs is list
         && request.resource.data.programs.size() >= 1
         && request.resource.data.programs.size() <= 7
@@ -64,7 +64,6 @@ service cloud.firestore {
         && request.resource.data.status == 'pending'
         && request.resource.data.createdAt == request.time;
 
-      // Only an assigned agent role can make one final decision on a pending item.
       allow update: if isAgent()
         && resource.data.status == 'pending'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
