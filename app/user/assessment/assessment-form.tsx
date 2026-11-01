@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, onSnapshot, query, serverTimestamp, where } from "firebase/firestore";
 import { auth, db } from "../../../lib/firebase";
 import { ArrowLeft, ClipboardCheck, Info } from "lucide-react";
 import Link from "next/link";
@@ -22,10 +22,35 @@ export function AssessmentForm() {
   const [programs, setPrograms] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [checkingApproval, setCheckingApproval] = useState(true);
+  const [hasApprovedApplication, setHasApprovedApplication] = useState(false);
+
+  useEffect(() => {
+    const user = auth?.currentUser;
+    if (!db || !user) {
+      setCheckingApproval(false);
+      return;
+    }
+    const ownApplications = query(
+      collection(db, "applications"),
+      where("ownerUid", "==", user.uid)
+    );
+    return onSnapshot(ownApplications, (snapshot) => {
+      setHasApprovedApplication(snapshot.docs.some((item) => item.data().status === "approved"));
+      setCheckingApproval(false);
+    }, () => {
+      setError("Status pengajuan belum dapat diperiksa. Muat ulang halaman sebelum mengirim pengajuan.");
+      setCheckingApproval(false);
+    });
+  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    if (checkingApproval || hasApprovedApplication) {
+      setError(hasApprovedApplication ? "Akun ini sudah memiliki pengajuan yang disetujui. Pengajuan baru tidak dapat dibuat." : "Sedang memeriksa status pengajuan. Coba lagi sebentar.");
+      return;
+    }
     const user = auth?.currentUser;
     if (!db || !user) {
       setError("Sesi login tidak ditemukan. Silakan login kembali.");
@@ -75,6 +100,12 @@ export function AssessmentForm() {
         <Info size={19} className="mt-0.5 shrink-0" />
         <p>Mode uji coba. Gunakan data contoh saja. Jangan masukkan NIK, nomor KK, alamat rinci, foto identitas, atau data pribadi warga sungguhan.</p>
       </div>
+      {hasApprovedApplication && (
+        <div role="status" className="mb-5 rounded-xl border border-slate-200 bg-slate-100 p-4 text-sm leading-6 text-slate-700">
+          Pengajuan akun ini sudah disetujui. Pembuatan pengajuan baru dinonaktifkan.
+          <Link href="/user/dashboard" className="ml-1 font-semibold text-perlab-800 underline">Lihat status pengajuan</Link>
+        </div>
+      )}
       <h2 className="font-bold text-slate-900">Kriteria ekonomi (data uji)</h2>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="text-sm font-medium text-slate-700">Daya listrik rumah
@@ -112,7 +143,7 @@ export function AssessmentForm() {
       {error && <p role="alert" className="mt-5 rounded-xl bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
       <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-between">
         <Link href="/user/dashboard" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 text-sm font-semibold text-slate-700"><ArrowLeft size={16}/> Kembali</Link>
-        <button disabled={loading} type="submit" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-perlab-700 px-5 font-semibold text-white disabled:opacity-60"><ClipboardCheck size={18}/>{loading ? "Mengirim..." : "Kirim pengajuan"}</button>
+        <button disabled={loading || checkingApproval || hasApprovedApplication} type="submit" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-perlab-700 px-5 font-semibold text-white transition hover:bg-perlab-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 disabled:shadow-none"><ClipboardCheck size={18}/>{loading ? "Mengirim..." : checkingApproval ? "Memeriksa status..." : hasApprovedApplication ? "Pengajuan sudah disetujui" : "Kirim pengajuan"}</button>
       </div>
     </form>
   );
