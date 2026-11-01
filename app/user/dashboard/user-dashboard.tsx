@@ -163,9 +163,15 @@ export function UserDashboard() {
             <h2 className="text-lg font-bold text-slate-900">Riwayat pengajuan saya</h2>
             <p className="mt-1 text-sm text-slate-500">Status diperbarui otomatis saat petugas memberikan keputusan.</p>
           </div>
-          <Link href="/user/assessment" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-perlab-700 px-4 text-sm font-semibold text-white hover:bg-perlab-800">
-            Buat pengajuan <ArrowUpRight size={17} />
-          </Link>
+          {approvedCount > 0 ? (
+            <button type="button" disabled aria-disabled="true" className="inline-flex min-h-11 cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-slate-200 px-4 text-sm font-semibold text-slate-500">
+              Pengajuan disetujui <CheckCircle2 size={17} />
+            </button>
+          ) : (
+            <Link href="/user/assessment" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-perlab-700 px-4 text-sm font-semibold text-white hover:bg-perlab-800">
+              Buat pengajuan <ArrowUpRight size={17} />
+            </Link>
+          )}
         </div>
 
         {loading && <p className="mt-5 text-sm text-slate-500">Memuat riwayat pengajuan...</p>}
