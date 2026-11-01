@@ -50,6 +50,7 @@ export function AssessmentForm() {
       const ref = await addDoc(collection(db, "applications"), {
         ownerUid: user.uid,
         applicantName: user.displayName?.trim() || "Warga Perlab",
+        applicantEmail: user.email || "",
         programs,
         dayaListrik: String(form.get("dayaListrik") || ""),
         motorCount,
