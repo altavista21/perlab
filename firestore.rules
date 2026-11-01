@@ -5,11 +5,13 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAgent() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'agent';
+    }
+
     match /users/{userId} {
       allow get: if signedIn() && request.auth.uid == userId;
-
-      // Public registration may create only a citizen profile for its own UID.
-      // Clients can never assign themselves the agent role or edit roles later.
       allow create: if signedIn()
         && request.auth.uid == userId
         && request.resource.data.keys().hasOnly(['name', 'email', 'role', 'createdAt'])
@@ -20,17 +22,68 @@ service cloud.firestore {
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.role == 'citizen'
         && request.resource.data.createdAt == request.time;
-
       allow list, update, delete: if false;
     }
 
-    // Application and appeal data remain closed until dedicated, tested rules
-    // and server-authorized workflows are implemented.
-    match /applications/{documentId} {
-      allow read, write: if false;
+    match /applications/{applicationId} {
+      // Citizens may read only their own application. Agents may review the queue.
+      allow get: if signedIn() && (resource.data.ownerUid == request.auth.uid || isAgent());
+      allow list: if isAgent();
+
+      // A citizen may create an application only for their own authenticated UID.
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'ownerUid', 'applicantName', 'programs', 'dayaListrik',
+          'motorCount', 'carCount', 'hasSchoolMember', 'hasElderlyMember',
+          'status', 'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'ownerUid', 'applicantName', 'programs', 'dayaListrik',
+          'motorCount', 'carCount', 'hasSchoolMember', 'hasElderlyMember',
+          'status', 'createdAt'
+        ])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.applicantName is string
+        && request.resource.data.applicantName.size() >= 1
+        && request.resource.data.applicantName.size() <= 80
+        && request.resource.data.programs is list
+        && request.resource.data.programs.size() >= 1
+        && request.resource.data.programs.size() <= 7
+        && request.resource.data.programs.toSet().hasOnly([
+          'BPNT', 'PKH', 'KIP', 'SUBSIDI_LISTRIK', 'SUBSIDI_BBM', 'SUBSIDI_GAS', 'LANSIA'
+        ])
+        && request.resource.data.dayaListrik in ['450 VA', '900 VA', '1300 VA', '2200 VA', '> 2200 VA']
+        && request.resource.data.motorCount is int
+        && request.resource.data.motorCount >= 0
+        && request.resource.data.motorCount <= 99
+        && request.resource.data.carCount is int
+        && request.resource.data.carCount >= 0
+        && request.resource.data.carCount <= 99
+        && request.resource.data.hasSchoolMember is bool
+        && request.resource.data.hasElderlyMember is bool
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time;
+
+      // Only an assigned agent role can make one final decision on a pending item.
+      allow update: if isAgent()
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'reviewNote', 'reviewedBy', 'reviewedAt'
+        ])
+        && request.resource.data.diff(resource.data).affectedKeys().hasAll([
+          'status', 'reviewNote', 'reviewedBy', 'reviewedAt'
+        ])
+        && request.resource.data.status in ['approved', 'rejected']
+        && request.resource.data.reviewNote is string
+        && request.resource.data.reviewNote.size() >= 10
+        && request.resource.data.reviewNote.size() <= 1000
+        && request.resource.data.reviewedBy == request.auth.uid
+        && request.resource.data.reviewedAt == request.time;
+
+      allow delete: if false;
     }
 
-    match /appeals/{documentId} {
+    match /appeals/{appealId} {
       allow read, write: if false;
     }
 
