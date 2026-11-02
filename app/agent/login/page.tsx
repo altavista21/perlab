@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
@@ -9,32 +9,34 @@ import { Brand } from "../../_components/shell";
 import { LiveFaceCheck } from "./live-face-check";
 import { auth, db } from "../../../lib/firebase";
 
+const AGENT_LIVENESS_KEY = "perlab_agent_liveness_passed";
+
 export default function AgentLoginPage() {
-  const [nip, setNip] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [livenessPassed, setLivenessPassed] = useState(false);
+  const [agentAuthenticated, setAgentAuthenticated] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const handleLiveness = useCallback((verified: boolean) => {
-    setLivenessPassed(verified);
+  useEffect(() => {
+    sessionStorage.removeItem(AGENT_LIVENESS_KEY);
   }, []);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const handleLiveness = useCallback((verified: boolean) => {
+    if (!verified) {
+      sessionStorage.removeItem(AGENT_LIVENESS_KEY);
+      return;
+    }
+    sessionStorage.setItem(AGENT_LIVENESS_KEY, "true");
+    window.location.assign("/agent/dashboard");
+  }, []);
+
+  async function handleCredentials(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
 
-    if (!/^\\d{18}$/.test(nip)) {
-      setError("NIP harus terdiri dari tepat 18 digit angka.");
-      return;
-    }
-    if (!livenessPassed) {
-      setError("Selesaikan tantangan liveness wajah terlebih dahulu.");
-      return;
-    }
     if (!auth || !db) {
-      setError("Konfigurasi Firebase belum lengkap. Isi variabel NEXT_PUBLIC_FIREBASE_* di Vercel atau .env.local.");
+      setError("Konfigurasi Firebase belum lengkap. Lengkapi variabel NEXT_PUBLIC_FIREBASE_* di Vercel.");
       return;
     }
 
@@ -46,16 +48,12 @@ export default function AgentLoginPage() {
 
       if (!data || data.role !== "agent") {
         await signOut(auth);
-        setError("Akun ini tidak memiliki peran petugas. Hanya akun yang ditetapkan admin sebagai agent yang dapat masuk.");
-        return;
-      }
-      if (String(data.nip ?? "") !== nip) {
-        await signOut(auth);
-        setError("NIP tidak cocok atau belum didaftarkan pada profil petugas. Minta admin mengisi field nip pada users/{UID} di Firestore.");
+        setError("Akun ini tidak memiliki peran petugas. Hanya akun dengan role agent yang dapat masuk.");
         return;
       }
 
-      window.location.assign("/agent/dashboard");
+      sessionStorage.removeItem(AGENT_LIVENESS_KEY);
+      setAgentAuthenticated(true);
     } catch (cause) {
       const code = cause && typeof cause === "object" && "code" in cause ? String(cause.code) : "";
       if (code === "auth/invalid-credential" || code === "auth/user-not-found" || code === "auth/wrong-password") {
@@ -72,6 +70,13 @@ export default function AgentLoginPage() {
     }
   }
 
+  async function cancelLiveness() {
+    if (auth) await signOut(auth);
+    sessionStorage.removeItem(AGENT_LIVENESS_KEY);
+    setAgentAuthenticated(false);
+    setPassword("");
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:grid sm:place-items-center">
       <div className="mx-auto w-full max-w-md">
@@ -84,46 +89,32 @@ export default function AgentLoginPage() {
             <ShieldCheck size={24} />
           </span>
           <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-950">Portal petugas</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Masukkan NIP dan selesaikan tantangan gerakan wajah. Akun petugas tetap diverifikasi melalui Firebase.</p>
-
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <label className="block text-sm font-semibold text-slate-700">
-              NIP (18 digit)
-              <input
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                value={nip}
-                onChange={(event) => setNip(event.target.value.replace(/\\D/g, "").slice(0, 18))}
-                required
-                minLength={18}
-                maxLength={18}
-                pattern="[0-9]{18}"
-                placeholder="Masukkan 18 digit NIP"
-                className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-perlab-600 focus:ring-4 focus:ring-perlab-100"
-              />
-            </label>
-
-            <LiveFaceCheck onVerified={handleLiveness} />
-
-            <div className="border-t border-slate-100 pt-4">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Autentikasi akun petugas</p>
-              <label className="block text-sm font-semibold text-slate-700">
-                Email petugas
-                <input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required maxLength={254} placeholder="petugas@email.com" className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-perlab-600 focus:ring-4 focus:ring-perlab-100" />
-              </label>
-              <label className="mt-4 block text-sm font-semibold text-slate-700">
-                Kata sandi
-                <input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={6} maxLength={128} placeholder="Masukkan kata sandi" className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-perlab-600 focus:ring-4 focus:ring-perlab-100" />
-              </label>
+          {!agentAuthenticated ? (
+            <>
+              <p className="mt-2 text-sm leading-6 text-slate-500">Masukkan email dan kata sandi akun petugas untuk melanjutkan ke pemeriksaan wajah.</p>
+              <form onSubmit={handleCredentials} className="mt-6 space-y-4">
+                <label className="block text-sm font-semibold text-slate-700">
+                  Email petugas
+                  <input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required maxLength={254} placeholder="petugas@email.com" className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-perlab-600 focus:ring-4 focus:ring-perlab-100" />
+                </label>
+                <label className="block text-sm font-semibold text-slate-700">
+                  Kata sandi
+                  <input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={6} maxLength={128} placeholder="Masukkan kata sandi" className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-perlab-600 focus:ring-4 focus:ring-perlab-100" />
+                </label>
+                {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm leading-5 text-rose-800">{error}</p>}
+                <button disabled={busy} className="min-h-12 w-full rounded-xl bg-perlab-700 px-4 font-semibold text-white hover:bg-perlab-800 disabled:cursor-wait disabled:opacity-60" type="submit">
+                  {busy ? "Memeriksa akun…" : "Lanjutkan ke scan wajah"}
+                </button>
+              </form>
+            </>
+          ) : (
+            <div className="mt-5 space-y-4">
+              <div className="rounded-xl bg-emerald-50 p-3 text-sm font-medium text-emerald-800">Akun petugas terverifikasi. Selesaikan pemeriksaan wajah untuk membuka dashboard.</div>
+              <LiveFaceCheck onVerified={handleLiveness} />
+              <button type="button" onClick={cancelLiveness} className="min-h-11 w-full rounded-xl border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Batalkan dan keluar</button>
             </div>
-
-            {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm leading-5 text-rose-800">{error}</p>}
-            <button disabled={busy || !livenessPassed} className="min-h-12 w-full rounded-xl bg-perlab-700 px-4 font-semibold text-white hover:bg-perlab-800 disabled:cursor-not-allowed disabled:opacity-50" type="submit">
-              {busy ? "Memeriksa akun…" : "Verifikasi & masuk"}
-            </button>
-          </form>
-          <p className="mt-4 text-xs leading-5 text-slate-500">Admin perlu mengisi field <code>nip</code> pada dokumen <code>users/{'{UID}'}</code> di Firestore dan memastikan role bernilai <code>agent</code>. NIP harus cocok dengan data tersebut.</p>
+          )}
+          <p className="mt-4 text-xs leading-5 text-slate-500">Akses dashboard memerlukan akun Firebase dengan role <code>agent</code> dan penyelesaian pemeriksaan liveness pada sesi ini.</p>
         </section>
       </div>
     </main>
