@@ -30,6 +30,12 @@ export function AuthGuard({ role, children }: { role: Role; children: React.Reac
         return;
       }
 
+      if (role === "agent" && sessionStorage.getItem("perlab_agent_liveness_passed") !== "true") {
+        await signOut(firebaseAuth);
+        router.replace("/agent/login");
+        return;
+      }
+
       try {
         const profile = await getDoc(doc(firestore, "users", user.uid));
         if (!profile.exists() || profile.data().role !== role) {
